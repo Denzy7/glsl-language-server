@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.0)
+cmake_minimum_required(VERSION 3.11.0)
 project(glsl-language-server)
 
 find_package(Threads REQUIRED)
@@ -11,9 +11,6 @@ if (HTTP_SUPPORT)
 endif()
 
 if (USE_SYSTEM_LIBS)
-    find_package(glslang REQUIRED)
-    message(STATUS "found package glslang, version: ${glslang_VERSION}")
-
     find_package(fmt REQUIRED)
     message(STATUS "found package fmt, version: ${fmt_VERSION}")
 
@@ -33,7 +30,6 @@ if (USE_SYSTEM_LIBS)
         endif()
     endif()
 else()
-    add_subdirectory(externals/glslang EXCLUDE_FROM_ALL)
 
     add_subdirectory(externals/fmt EXCLUDE_FROM_ALL)
 
@@ -54,8 +50,9 @@ else()
     endif()
 endif()
 
-
 set(CMAKE_CXX_STANDARD 20)
+
+add_subdirectory(externals/glslang EXCLUDE_FROM_ALL)
 
 file(GLOB SOURCES
     src/*.cpp
@@ -74,25 +71,20 @@ endif()
 
 target_link_libraries(glslls
     ${CMAKE_THREAD_LIBS_INIT}
-    glslang
+    glslang::glslang
+    glslang::glslang-default-resource-limits
     nlohmann_json
     SPIRV
     fmt::fmt-header-only
 )
 
 if (USE_SYSTEM_LIBS)
-    target_link_libraries(glslls
-        glslang::glslang
-        glslang::glslang-default-resource-limits
-    )
-
     if (HTTP_SUPPORT)
         target_link_libraries(glslls ${mongoose})
     endif()
 else()
     target_sources(glslls PRIVATE externals/glslang/glslang/ResourceLimits/ResourceLimits.cpp)
     target_link_libraries(glslls
-        glslang
         nlohmann_json
         mongoose
     )
